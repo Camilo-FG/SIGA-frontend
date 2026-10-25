@@ -1,0 +1,1 @@
+.global-theme-control{position:fixed;right:22px;bottom:22px;z-index:1001}.global-theme-control .theme-toggle{background:var(--cream);box-shadow:0 6px 18px #0002}@media(max-width:640px){.global-theme-control{right:14px;bottom:14px}}

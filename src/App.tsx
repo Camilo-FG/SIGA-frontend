@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { assignStudentToGroup, assignTeacherToGroup, clearToken, createCharge, createDiscipline, createGuardian, createPayment, createStudent, createGroup, deactivateStudent, getCharges, getDashboardSummary, getDisciplines, getGroups, getGuardians, getInternalUsers, getMe, getStudents, getToken, login, reviewReceipt, setToken, updateGuardian, updateGroup } from './api';
+import { assignStudentToGroup, assignTeacherToGroup, clearToken, createCharge, createDiscipline, createGuardian, createPayment, createStudent, createGroup, deactivateStudent, getCharges, getDashboardSummary, getDisciplines, getGroups, getGuardians, getInternalUsers, getMe, getStudents, getToken, reviewReceipt, setToken, updateGuardian, updateGroup } from './api';
 import type { AttendanceStatus, Charge, DashboardSummary, Discipline, Group, Guardian, Student, User } from './api';
 import { getAttendance, recordAttendance } from './api';
 import './App.css';
@@ -20,9 +20,9 @@ import './landing.css';
 import './contrast.css';
 import './landing-motion.css';
 import './login.css';
-import { ThemeToggle } from './theme-toggle.tsx';
 import { ToastHost } from './ToastHost';
 import { Landing } from './features/landing';
+import { Login } from './features/auth/Login';
 
 const roleLabels: Record<User['role'], string> = { DIRECTOR_GENERAL: 'Director General', DIRECTOR_ADMINISTRATIVO: 'Director Administrativo', ASISTENTE_DIRECCION: 'Asistente de Dirección', COREOGRAFO: 'Coreógrafo', PROFESOR: 'Profesor' };
 
@@ -33,13 +33,6 @@ function App() {
   return <><ToastHost />{checking ? <main className="center-page">Cargando sesión…</main> : !user ? <Login onLogin={(auth) => { setToken(auth.accessToken); window.location.href = '/app'; }} /> : <Dashboard user={user} onLogout={() => { clearToken(); window.location.href = '/login'; }} />}</>;
 }
 
-
-function Login({ onLogin }: { onLogin: (auth: Awaited<ReturnType<typeof login>>) => void }) {
-  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const [loading, setLoading] = useState(false);
-  const demoUsers = [{ label: 'Director General', email: 'demo.director@siga.local', password: 'SigaDirector2026!' }, { label: 'Director Administrativo', email: 'demo.admin@siga.local', password: 'SigaAdmin2026!' }, { label: 'Asistente de Dirección', email: 'demo.asistente@siga.local', password: 'SigaAsistente2026!' }, { label: 'Coreógrafo', email: 'demo.coreografo@siga.local', password: 'SigaCoreografo2026!' }, { label: 'Profesor', email: 'demo.profesor@siga.local', password: 'SigaProfesor2026!' }];
-  async function submit(event: FormEvent) { event.preventDefault(); setError(''); setLoading(true); try { onLogin(await login(email, password)); } catch (err) { setError(err instanceof Error ? err.message : 'Error de autenticación'); } finally { setLoading(false); } }
-  return <main className="auth-page"><section className="auth-card"><div className="login-tools"><a className="back-to-landing" href="/">← Volver al sitio público</a><ThemeToggle /></div><div className="brand-mark">A</div><p className="eyebrow">ADAGIO · SIGA</p><h1>Bienvenido de vuelta</h1><p className="muted">Ingresa con tu cuenta institucional.</p>{import.meta.env.DEV && <label className="demo-login">Acceso rápido de pruebas<select defaultValue="" onChange={(e) => { const selected = demoUsers.find((demo) => demo.email === e.target.value); if (selected) { setEmail(selected.email); setPassword(selected.password); } }}><option value="">Selecciona un rol demo…</option>{demoUsers.map((demo) => <option key={demo.email} value={demo.email}>{demo.label}</option>)}</select></label>}<form onSubmit={submit} className="stack-form"><label>Correo institucional<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label><label>Contraseña<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" /></label>{error && <p className="error-message" role="alert">{error}</p>}<button className="primary-button" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</button></form></section></main>;
-}
 
 function Dashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [section, setSection] = useState<'dashboard' | 'students' | 'guardians' | 'groups' | 'attendance' | 'payments'>('dashboard');

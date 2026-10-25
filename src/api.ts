@@ -8,6 +8,7 @@ export type Discipline = { id: string; name: string; active: boolean };
 export type Group = { id: string; name: string; location?: string; dayOfWeek?: number; startTime?: string; endTime?: string; discipline: Discipline; teachers: { user: User }[]; students: { student: Student }[] };
 export type AttendanceStatus = 'PRESENTE' | 'AUSENTE' | 'TARDIA';
 export type AttendanceSession = { id: string; groupId: string; date: string; records: { studentId: string; status: AttendanceStatus; student: Student }[] };
+export type AttendanceResponse = { sessions: AttendanceSession[]; summary: { total: number; present: number; late: number; absent: number; attendanceRate: number } };
 export type Charge = { id: string; studentId: string; concept: string; amount: string | number; period: string; dueDate?: string; status: 'PENDIENTE' | 'PAGADO' | 'VENCIDO' | 'CANCELADO'; student: Student; payments: Payment[] };
 export type Payment = { id: string; amount: string | number; receiptUrl?: string; receiptStatus: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO'; reference?: string };
 export type DashboardSummary = { activeStudents: number; groups: number; pendingCharges: number; overdueCharges: number; attendance: { sessions: number; present: number; late: number; absent: number } };
@@ -47,7 +48,7 @@ export const createGroup = async (data: { name: string; disciplineId: string; da
 export const updateGroup = async (id: string, data: { name: string; disciplineId: string; dayOfWeek?: number; startTime?: string; endTime?: string; location?: string }) => { const result = await request<Group>(`/groups/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); notify('Grupo actualizado correctamente.'); return result; };
 export const assignStudentToGroup = async (groupId: string, studentId: string) => { const result = await request(`/groups/${groupId}/students`, { method: 'POST', body: JSON.stringify({ studentId }) }); notify('Estudiante asignado al grupo.'); return result; };
 export const assignTeacherToGroup = async (groupId: string, userId: string) => { const result = await request(`/groups/${groupId}/teachers`, { method: 'POST', body: JSON.stringify({ userId }) }); notify('Profesor asignado al grupo.'); return result; };
-export const getAttendance = (groupId: string) => request<AttendanceSession[]>(`/attendance?groupId=${encodeURIComponent(groupId)}`);
+export const getAttendance = (groupId: string, studentId?: string) => request<AttendanceResponse>(`/attendance?groupId=${encodeURIComponent(groupId)}${studentId ? `&studentId=${encodeURIComponent(studentId)}` : ''}`);
 export const recordAttendance = async (data: { groupId: string; date: string; records: { studentId: string; status: AttendanceStatus }[] }) => { const result = await request<AttendanceSession>('/attendance', { method: 'POST', body: JSON.stringify(data) }); notify('Asistencia guardada correctamente.'); return result; };
 export const getCharges = () => request<Charge[]>('/payments/charges');
 export const createCharge = async (data: { studentId: string; concept: string; amount: number; period: string; dueDate?: string }) => { const result = await request<Charge>('/payments/charges', { method: 'POST', body: JSON.stringify(data) }); notify('Cobro registrado correctamente.'); return result; };

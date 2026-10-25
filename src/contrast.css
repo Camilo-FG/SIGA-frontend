@@ -3,3 +3,4 @@
 .landing-cta{background:#b83f45}
 .discipline-tile span,.section-label,.landing .eyebrow{color:#a8323b}
 .values-list span{color:#0b6b57;border-color:#78b9a8}
+.landing h1,.landing h2,.landing h3,.landing strong{color:var(--navy)!important}.landing-hero h1,.landing-section h2,.values-section h2,.discipline-tile strong{color:var(--navy)!important}.landing-section p{color:#4b5965!important}.vision-card h2,.landing-cta-section h2,.landing-cta-section .eyebrow{color:#fff!important}.landing-footer a{color:#f6bc4c!important}

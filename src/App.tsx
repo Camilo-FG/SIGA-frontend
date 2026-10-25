@@ -12,15 +12,14 @@ import './theme.css';
 import './fullscreen.css';
 import './purple-theme.css';
 import './demo-login.css';
+import { ToastHost } from './ToastHost';
 
 const roleLabels: Record<User['role'], string> = { DIRECTOR_GENERAL: 'Director General', DIRECTOR_ADMINISTRATIVO: 'Director Administrativo', ASISTENTE_DIRECCION: 'Asistente de Dirección', COREOGRAFO: 'Coreógrafo', PROFESOR: 'Profesor' };
 
 function App() {
   const [user, setUser] = useState<User | null>(null); const [checking, setChecking] = useState(Boolean(getToken()));
   useEffect(() => { if (!getToken()) return; getMe().then(setUser).catch(clearToken).finally(() => setChecking(false)); }, []);
-  if (checking) return <main className="center-page">Cargando sesión…</main>;
-  if (!user) return <Login onLogin={(auth) => { setToken(auth.accessToken); setUser(auth.user); }} />;
-  return <Dashboard user={user} onLogout={() => { clearToken(); setUser(null); }} />;
+  return <><ToastHost />{checking ? <main className="center-page">Cargando sesión…</main> : !user ? <Login onLogin={(auth) => { setToken(auth.accessToken); setUser(auth.user); }} /> : <Dashboard user={user} onLogout={() => { clearToken(); setUser(null); }} />}</>;
 }
 
 function Login({ onLogin }: { onLogin: (auth: Awaited<ReturnType<typeof login>>) => void }) {

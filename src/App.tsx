@@ -1,122 +1,99 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { clearToken, createCharge, createDiscipline, createStudent, createGroup, deactivateStudent, getCharges, getDashboardSummary, getDisciplines, getGroups, getMe, getStudents, getToken, login, reviewReceipt, setToken } from './api';
+import type { AttendanceStatus, Charge, DashboardSummary, Discipline, Group, Student, User } from './api';
+import { getAttendance, recordAttendance } from './api';
+import './App.css';
+import './groups.css';
+import './attendance.css';
+import './payments.css';
+import './dashboard.css';
+import './theme.css';
+import './fullscreen.css';
+import './purple-theme.css';
+
+const roleLabels: Record<User['role'], string> = { DIRECTOR_GENERAL: 'Director General', DIRECTOR_ADMINISTRATIVO: 'Director Administrativo', ASISTENTE_DIRECCION: 'Asistente de Dirección', COREOGRAFO: 'Coreógrafo', PROFESOR: 'Profesor' };
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  const [user, setUser] = useState<User | null>(null); const [checking, setChecking] = useState(Boolean(getToken()));
+  useEffect(() => { if (!getToken()) return; getMe().then(setUser).catch(clearToken).finally(() => setChecking(false)); }, []);
+  if (checking) return <main className="center-page">Cargando sesión…</main>;
+  if (!user) return <Login onLogin={(auth) => { setToken(auth.accessToken); setUser(auth.user); }} />;
+  return <Dashboard user={user} onLogout={() => { clearToken(); setUser(null); }} />;
 }
 
-export default App
+function Login({ onLogin }: { onLogin: (auth: Awaited<ReturnType<typeof login>>) => void }) {
+  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const [loading, setLoading] = useState(false);
+  async function submit(event: FormEvent) { event.preventDefault(); setError(''); setLoading(true); try { onLogin(await login(email, password)); } catch (err) { setError(err instanceof Error ? err.message : 'Error de autenticación'); } finally { setLoading(false); } }
+  return <main className="auth-page"><section className="auth-card"><div className="brand-mark">A</div><p className="eyebrow">ADAGIO · SIGA</p><h1>Bienvenido de vuelta</h1><p className="muted">Ingresa con tu cuenta institucional.</p><form onSubmit={submit} className="stack-form"><label>Correo institucional<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label><label>Contraseña<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" /></label>{error && <p className="error-message" role="alert">{error}</p>}<button className="primary-button" disabled={loading}>{loading ? 'Ingresando…' : 'Iniciar sesión'}</button></form></section></main>;
+}
+
+function Dashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
+  const [section, setSection] = useState<'dashboard' | 'students' | 'groups' | 'attendance' | 'payments'>('dashboard');
+  const [students, setStudents] = useState<Student[]>([]); const [search, setSearch] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [showForm, setShowForm] = useState(false);
+  async function loadStudents(term = search) { setLoading(true); setError(''); try { setStudents(await getStudents(term)); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudieron cargar los estudiantes'); } finally { setLoading(false); } }
+  useEffect(() => { void loadStudents(''); }, []);
+  async function deactivate(id: string) { if (!window.confirm('¿Desactivar este estudiante?')) return; try { await deactivateStudent(id); await loadStudents(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo desactivar'); } }
+  return <div className="app-shell"><header className="topbar"><div><p className="eyebrow">ADAGIO · SIGA</p><strong>Sistema de gestión</strong></div><div className="user-menu"><span>{user.name}<small>{roleLabels[user.role]}</small></span><button className="ghost-button" onClick={onLogout}>Salir</button></div></header><main className="content"><nav className="section-nav"><button className={section === 'dashboard' ? 'nav-active' : ''} onClick={() => setSection('dashboard')}>Resumen</button><button className={section === 'students' ? 'nav-active' : ''} onClick={() => setSection('students')}>Estudiantes</button><button className={section === 'groups' ? 'nav-active' : ''} onClick={() => setSection('groups')}>Disciplinas y grupos</button><button className={section === 'attendance' ? 'nav-active' : ''} onClick={() => setSection('attendance')}>Asistencia</button><button className={section === 'payments' ? 'nav-active' : ''} onClick={() => setSection('payments')}>Pagos</button></nav>{section === 'dashboard' ? <DashboardView /> : section === 'students' ? <><div className="page-heading"><div><p className="eyebrow">Administración</p><h1>Estudiantes</h1><p className="muted">Gestiona los expedientes y estados de matrícula.</p></div><button className="primary-button" onClick={() => setShowForm(true)}>+ Nuevo estudiante</button></div><section className="summary-card"><div><span className="summary-label">Estudiantes registrados</span><strong>{students.length}</strong></div><span className="summary-icon">◎</span></section><section className="panel"><div className="toolbar"><div className="search-box"><span>⌕</span><input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void loadStudents(); }} placeholder="Buscar por nombre o correo…" /></div><button className="secondary-button" onClick={() => void loadStudents()}>Buscar</button></div>{error && <p className="error-message" role="alert">{error}</p>}{loading ? <p className="empty-state">Cargando estudiantes…</p> : students.length === 0 ? <p className="empty-state">No hay estudiantes que mostrar.</p> : <div className="table-wrap"><table><thead><tr><th>Estudiante</th><th>Contacto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{students.map((student) => <tr key={student.id}><td><strong>{student.firstName} {student.lastName}</strong><small>{student.birthDate ? new Date(student.birthDate).toLocaleDateString('es-CR') : 'Fecha no registrada'}</small></td><td>{student.email || '—'}<small>{student.phone || 'Sin teléfono'}</small></td><td><span className={`status status-${student.enrollmentStatus.toLowerCase()}`}>{student.enrollmentStatus}</span></td><td><button className="danger-button" onClick={() => void deactivate(student.id)}>Desactivar</button></td></tr>)}</tbody></table></div>}</section></> : section === 'groups' ? <GroupsView /> : section === 'attendance' ? <AttendanceView /> : <PaymentsView />}</main>{showForm && <StudentForm onClose={() => setShowForm(false)} onCreated={async () => { setShowForm(false); await loadStudents(''); }} />}</div>;
+}
+
+function DashboardView() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null); const [error, setError] = useState('');
+  useEffect(() => { getDashboardSummary().then(setSummary).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudo cargar el resumen')); }, []);
+  if (error) return <section className="dashboard-view"><DashboardHeading /><p className="error-message">{error}</p></section>;
+  if (!summary) return <section className="dashboard-view"><DashboardHeading /><section className="metric-grid"><div className="metric-card dashboard-skeleton">Cargando…</div><div className="metric-card dashboard-skeleton">Cargando…</div><div className="metric-card dashboard-skeleton">Cargando…</div><div className="metric-card dashboard-skeleton">Cargando…</div></section></section>;
+  const totalAttendance = summary.attendance.present + summary.attendance.late + summary.attendance.absent; const attendanceRate = totalAttendance ? Math.round((summary.attendance.present / totalAttendance) * 100) : 0;
+  return <section className="dashboard-view"><DashboardHeading /><section className="metric-grid"><div className="metric-card"><span>Estudiantes activos</span><strong>{summary.activeStudents}</strong><small>Personas con matrícula activa</small></div><div className="metric-card"><span>Grupos activos</span><strong>{summary.groups}</strong><small>Clases actualmente disponibles</small></div><div className="metric-card warning"><span>Cobros pendientes</span><strong>{summary.pendingCharges}</strong><small>Requieren seguimiento</small></div><div className="metric-card danger"><span>Cobros vencidos</span><strong>{summary.overdueCharges}</strong><small>Fuera de la fecha límite</small></div></section><section className="panel dashboard-attendance"><div><p className="eyebrow">Asistencia</p><h2>Resumen de clases</h2><p className="muted">Datos de las sesiones registradas.</p></div><div className="attendance-summary"><strong>{attendanceRate}%</strong><span>asistencia registrada</span><small>{summary.attendance.sessions} sesiones · {summary.attendance.present} presentes · {summary.attendance.late} tardías · {summary.attendance.absent} ausentes</small></div></section></section>;
+}
+
+function DashboardHeading() { return <div className="page-heading dashboard-heading"><div><p className="eyebrow">Vista general</p><h1>Resumen</h1><p className="muted">Indicadores actualizados desde SIGA.</p></div><span className="live-indicator"><i /> Datos en vivo</span></div>; }
+
+function PaymentsView() {
+  const [charges, setCharges] = useState<Charge[]>([]); const [students, setStudents] = useState<Student[]>([]); const [showForm, setShowForm] = useState(false); const [error, setError] = useState('');
+  const load = () => Promise.all([getCharges(), getStudents()]).then(([loadedCharges, loadedStudents]) => { setCharges(loadedCharges); setStudents(loadedStudents); }).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los pagos'));
+  useEffect(() => { void load(); }, []);
+  async function review(id: string, status: 'APROBADO' | 'RECHAZADO') { try { await reviewReceipt(id, status); await load(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo revisar el comprobante'); } }
+  return <><div className="page-heading"><div><p className="eyebrow">Administración financiera</p><h1>Pagos</h1><p className="muted">Controla cobros, pagos y comprobantes.</p></div><button className="primary-button" onClick={() => setShowForm(true)}>+ Nuevo cobro</button></div>{error && <p className="error-message">{error}</p>}<section className="panel"><div className="table-wrap"><table><thead><tr><th>Estudiante</th><th>Concepto</th><th>Importe</th><th>Periodo</th><th>Estado</th><th>Comprobante</th></tr></thead><tbody>{charges.length === 0 ? <tr><td colSpan={6}><p className="empty-state">No hay cobros registrados.</p></td></tr> : charges.map((charge) => <tr key={charge.id}><td>{charge.student.firstName} {charge.student.lastName}</td><td>{charge.concept}</td><td>₡{Number(charge.amount).toLocaleString('es-CR')}</td><td>{charge.period}</td><td><span className={`status status-${charge.status.toLowerCase()}`}>{charge.status}</span></td><td>{charge.payments[0] ? charge.payments[0].receiptStatus === 'PENDIENTE' ? <span className="review-actions"><button className="approve-button" onClick={() => void review(charge.payments[0].id, 'APROBADO')}>Aprobar</button><button className="danger-button" onClick={() => void review(charge.payments[0].id, 'RECHAZADO')}>Rechazar</button></span> : charge.payments[0].receiptStatus : 'Sin comprobante'}</td></tr>)}</tbody></table></div></section>{showForm && <ChargeForm students={students} onClose={() => setShowForm(false)} onCreated={async () => { setShowForm(false); await load(); }} />}</>;
+}
+
+function ChargeForm({ students, onClose, onCreated }: { students: Student[]; onClose: () => void; onCreated: () => Promise<void> }) {
+  const [studentId, setStudentId] = useState(students[0]?.id || ''); const [concept, setConcept] = useState('Mensualidad'); const [amount, setAmount] = useState(''); const [period, setPeriod] = useState(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { await createCharge({ studentId, concept, amount: Number(amount), period }); await onCreated(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo crear el cobro'); } finally { setSaving(false); } }
+  return <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">Registro financiero</p><h2>Nuevo cobro</h2></div><button className="close-button" onClick={onClose}>×</button></div><form onSubmit={submit} className="stack-form"><label>Estudiante<select value={studentId} onChange={(e) => setStudentId(e.target.value)}>{students.map((student) => <option key={student.id} value={student.id}>{student.firstName} {student.lastName}</option>)}</select></label><label>Concepto<input value={concept} onChange={(e) => setConcept(e.target.value)} required /></label><label>Importe<input type="number" min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required /></label><label>Periodo<input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2026-01" required /></label>{error && <p className="error-message">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving || students.length === 0}>{saving ? 'Guardando…' : 'Guardar cobro'}</button></div></form></section></div>;
+}
+
+function AttendanceView() {
+  const [groups, setGroups] = useState<Group[]>([]); const [groupId, setGroupId] = useState(''); const [date, setDate] = useState(new Date().toISOString().slice(0, 10)); const [statuses, setStatuses] = useState<Record<string, AttendanceStatus>>({}); const [message, setMessage] = useState(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  useEffect(() => { getGroups().then(setGroups).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los grupos')); }, []);
+  const group = groups.find((item) => item.id === groupId);
+  useEffect(() => { if (!groupId) return; getAttendance(groupId).then((sessions) => { const session = sessions.find((item) => item.date.slice(0, 10) === date); setStatuses(Object.fromEntries(session?.records.map((record) => [record.studentId, record.status]) || [])); }).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudo cargar la asistencia')); }, [groupId, date]);
+  function setStatus(studentId: string, status: AttendanceStatus) { setStatuses((current) => ({ ...current, [studentId]: status })); }
+  async function save() { if (!group) return; setSaving(true); setMessage(''); setError(''); try { await recordAttendance({ groupId, date, records: group.students.map(({ student }) => ({ studentId: student.id, status: statuses[student.id] || 'AUSENTE' })) }); setMessage('Asistencia guardada correctamente.'); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar la asistencia'); } finally { setSaving(false); } }
+  return <><div className="page-heading"><div><p className="eyebrow">Registro de clase</p><h1>Asistencia</h1><p className="muted">Pasa lista desde tu teléfono en pocos pasos.</p></div><button className="primary-button" disabled={!group || saving} onClick={() => void save()}>{saving ? 'Guardando…' : 'Guardar asistencia'}</button></div><section className="panel attendance-panel"><div className="attendance-filters"><label>Grupo<select value={groupId} onChange={(e) => setGroupId(e.target.value)}><option value="">Selecciona un grupo</option>{groups.map((item) => <option key={item.id} value={item.id}>{item.discipline.name} · {item.name}</option>)}</select></label><label>Fecha<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label></div>{message && <p className="success-message">{message}</p>}{error && <p className="error-message">{error}</p>}{!group ? <p className="empty-state">Selecciona un grupo para comenzar.</p> : group.students.length === 0 ? <p className="empty-state">Este grupo no tiene estudiantes inscritos.</p> : <div className="attendance-list">{group.students.map(({ student }) => <div className="attendance-row" key={student.id}><strong>{student.firstName} {student.lastName}</strong><div className="attendance-actions">{(['PRESENTE', 'TARDIA', 'AUSENTE'] as AttendanceStatus[]).map((status) => <button key={status} className={statuses[student.id] === status ? `attendance-${status.toLowerCase()} selected` : `attendance-${status.toLowerCase()}`} onClick={() => setStatus(student.id, status)}>{status === 'PRESENTE' ? 'Presente' : status === 'TARDIA' ? 'Tardía' : 'Ausente'}</button>)}</div></div>)}</div>}</section></>;
+}
+
+function GroupsView() {
+  const [groups, setGroups] = useState<Group[]>([]); const [disciplines, setDisciplines] = useState<Discipline[]>([]); const [showForm, setShowForm] = useState(false); const [showDisciplineForm, setShowDisciplineForm] = useState(false); const [error, setError] = useState('');
+  useEffect(() => { Promise.all([getGroups(), getDisciplines()]).then(([loadedGroups, loadedDisciplines]) => { setGroups(loadedGroups); setDisciplines(loadedDisciplines); }).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los grupos')); }, []);
+  return <><div className="page-heading"><div><p className="eyebrow">Programación académica</p><h1>Disciplinas y grupos</h1><p className="muted">Organiza las clases y sus espacios.</p></div><div className="heading-actions"><button className="secondary-button" onClick={() => setShowDisciplineForm(true)}>+ Disciplina</button><button className="primary-button" onClick={() => setShowForm(true)}>+ Nuevo grupo</button></div></div>{error && <p className="error-message">{error}</p>}<div className="discipline-list">{disciplines.map((discipline) => <span className="discipline-pill" key={discipline.id}>{discipline.name}</span>)}</div><section className="group-grid">{groups.length === 0 ? <p className="empty-state">No hay grupos registrados.</p> : groups.map((group) => <article className="group-card" key={group.id}><div className="group-card-top"><span className="discipline-tag">{group.discipline.name}</span><span className="status status-active">ACTIVO</span></div><h2>{group.name}</h2><p className="muted">{group.dayOfWeek !== undefined ? `Día ${group.dayOfWeek} · ` : ''}{group.startTime || 'Horario pendiente'}{group.endTime ? ` – ${group.endTime}` : ''}</p><p className="group-meta">{group.location || 'Espacio pendiente'} · {group.students.length} estudiantes</p></article>)}</section>{showForm && <GroupForm disciplines={disciplines} onClose={() => setShowForm(false)} onCreated={async (group) => { setGroups((current) => [...current, group]); setShowForm(false); }} />}{showDisciplineForm && <DisciplineForm onClose={() => setShowDisciplineForm(false)} onCreated={(discipline) => { setDisciplines((current) => [...current, discipline]); setShowDisciplineForm(false); }} />}</>;
+}
+
+function DisciplineForm({ onClose, onCreated }: { onClose: () => void; onCreated: (discipline: Discipline) => void }) {
+  const [name, setName] = useState(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { onCreated(await createDiscipline(name)); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo crear la disciplina'); } finally { setSaving(false); } }
+  return <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">Catálogo académico</p><h2>Nueva disciplina</h2></div><button className="close-button" onClick={onClose} aria-label="Cerrar">×</button></div><form onSubmit={submit} className="stack-form"><label>Nombre<input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={100} placeholder="Ej. Ballet clásico" /></label>{error && <p className="error-message">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? 'Guardando…' : 'Guardar disciplina'}</button></div></form></section></div>;
+}
+
+function GroupForm({ disciplines, onClose, onCreated }: { disciplines: Discipline[]; onClose: () => void; onCreated: (group: Group) => Promise<void> }) {
+  const [name, setName] = useState(''); const [disciplineId, setDisciplineId] = useState(disciplines[0]?.id || ''); const [location, setLocation] = useState(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { await onCreated(await createGroup({ name, disciplineId, location: location || undefined })); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar'); } finally { setSaving(false); } }
+  return <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">Programación</p><h2>Nuevo grupo</h2></div><button className="close-button" onClick={onClose}>×</button></div>{disciplines.length === 0 ? <p className="error-message">Primero crea una disciplina desde la consola administrativa.</p> : <form onSubmit={submit} className="stack-form"><label>Nombre del grupo<input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} /></label><label>Disciplina<select value={disciplineId} onChange={(e) => setDisciplineId(e.target.value)}>{disciplines.map((discipline) => <option key={discipline.id} value={discipline.id}>{discipline.name}</option>)}</select></label><label>Espacio<input value={location} onChange={(e) => setLocation(e.target.value)} /></label>{error && <p className="error-message">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? 'Guardando…' : 'Guardar grupo'}</button></div></form>}</section></div>;
+}
+
+function StudentForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => Promise<void> }) {
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', enrollmentStatus: 'PENDING' as Student['enrollmentStatus'] }); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); setError(''); try { await createStudent({ ...form, email: form.email || undefined, phone: form.phone || undefined }); await onCreated(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar'); } finally { setSaving(false); } }
+  return <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="student-form-title"><div className="modal-heading"><div><p className="eyebrow">Expediente</p><h2 id="student-form-title">Nuevo estudiante</h2></div><button className="close-button" onClick={onClose} aria-label="Cerrar">×</button></div><form onSubmit={submit} className="stack-form"><div className="form-grid"><label>Nombre<input value={form.firstName} onChange={(e) => update('firstName', e.target.value)} required minLength={2} /></label><label>Apellidos<input value={form.lastName} onChange={(e) => update('lastName', e.target.value)} required minLength={2} /></label><label>Correo<input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} /></label><label>Teléfono<input value={form.phone} onChange={(e) => update('phone', e.target.value)} /></label><label>Estado<select value={form.enrollmentStatus} onChange={(e) => update('enrollmentStatus', e.target.value)}><option value="PENDING">Pendiente</option><option value="ACTIVE">Activa</option><option value="INACTIVE">Inactiva</option></select></label></div>{error && <p className="error-message" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? 'Guardando…' : 'Guardar estudiante'}</button></div></form></section></div>;
+}
+export default App;

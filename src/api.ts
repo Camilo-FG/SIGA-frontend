@@ -44,6 +44,7 @@ export const createDiscipline = async (name: string) => { const result = await r
 export const getGroups = () => request<Group[]>('/groups');
 export const getInternalUsers = (role?: 'PROFESOR' | 'COREOGRAFO') => request<User[]>(`/auth/users${role ? `?role=${role}` : ''}`);
 export const createGroup = async (data: { name: string; disciplineId: string; dayOfWeek?: number; startTime?: string; endTime?: string; location?: string }) => { const result = await request<Group>('/groups', { method: 'POST', body: JSON.stringify(data) }); notify('Grupo creado correctamente.'); return result; };
+export const updateGroup = async (id: string, data: { name: string; disciplineId: string; dayOfWeek?: number; startTime?: string; endTime?: string; location?: string }) => { const result = await request<Group>(`/groups/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); notify('Grupo actualizado correctamente.'); return result; };
 export const assignStudentToGroup = async (groupId: string, studentId: string) => { const result = await request(`/groups/${groupId}/students`, { method: 'POST', body: JSON.stringify({ studentId }) }); notify('Estudiante asignado al grupo.'); return result; };
 export const assignTeacherToGroup = async (groupId: string, userId: string) => { const result = await request(`/groups/${groupId}/teachers`, { method: 'POST', body: JSON.stringify({ userId }) }); notify('Profesor asignado al grupo.'); return result; };
 export const getAttendance = (groupId: string) => request<AttendanceSession[]>(`/attendance?groupId=${encodeURIComponent(groupId)}`);

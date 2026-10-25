@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { assignStudentToGroup, assignTeacherToGroup, clearToken, createCharge, createDiscipline, createGuardian, createPayment, createStudent, createGroup, deactivateStudent, getCharges, getDashboardSummary, getDisciplines, getGroups, getGuardians, getInternalUsers, getMe, getStudents, getToken, reviewReceipt, setToken, updateGuardian, updateGroup } from './api';
-import type { AttendanceStatus, Charge, DashboardSummary, Discipline, Group, Guardian, Student, User } from './api';
+import { assignStudentToGroup, assignTeacherToGroup, clearToken, createCharge, createDiscipline, createGuardian, createPayment, createStudent, createGroup, deactivateStudent, getCharges, getDisciplines, getGroups, getGuardians, getInternalUsers, getMe, getStudents, getToken, reviewReceipt, setToken, updateGuardian, updateGroup } from './api';
+import type { AttendanceStatus, Charge, Discipline, Group, Guardian, Student, User } from './api';
 import { getAttendance, recordAttendance } from './api';
 import './App.css';
 import './groups.css';
@@ -22,6 +22,7 @@ import './landing-motion.css';
 import './login.css';
 import { ToastHost } from './ToastHost';
 import { Landing } from './features/landing';
+import { DashboardView } from './features/dashboard/DashboardView';
 import { Login } from './features/auth/Login';
 
 const roleLabels: Record<User['role'], string> = { DIRECTOR_GENERAL: 'Director General', DIRECTOR_ADMINISTRATIVO: 'Director Administrativo', ASISTENTE_DIRECCION: 'Asistente de Dirección', COREOGRAFO: 'Coreógrafo', PROFESOR: 'Profesor' };
@@ -56,17 +57,6 @@ function GuardianForm({ guardian, onClose, onSaved }: { guardian: Guardian | nul
   async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { const data = { ...form, email: form.email || undefined, phone: form.phone || undefined }; if (guardian) await updateGuardian(guardian.id, data); else await createGuardian(data); await onSaved(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar el encargado'); } finally { setSaving(false); } }
   return <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true"><div className="modal-heading"><div><p className="eyebrow">Contacto familiar</p><h2>{guardian ? 'Editar encargado' : 'Nuevo encargado'}</h2></div><button className="close-button" onClick={onClose} aria-label="Cerrar">×</button></div><form onSubmit={submit} className="stack-form"><div className="form-grid"><label>Nombre<input value={form.firstName} onChange={(e) => update('firstName', e.target.value)} required minLength={2} /></label><label>Apellidos<input value={form.lastName} onChange={(e) => update('lastName', e.target.value)} required minLength={2} /></label><label>Correo<input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} /></label><label>Teléfono<input value={form.phone} onChange={(e) => update('phone', e.target.value)} /></label></div>{error && <p className="error-message">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? 'Guardando…' : 'Guardar encargado'}</button></div></form></section></div>;
 }
-
-function DashboardView() {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null); const [error, setError] = useState('');
-  useEffect(() => { getDashboardSummary().then(setSummary).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudo cargar el resumen')); }, []);
-  if (error) return <section className="dashboard-view"><DashboardHeading /><p className="error-message">{error}</p></section>;
-  if (!summary) return <section className="dashboard-view"><DashboardHeading /><section className="metric-grid"><div className="metric-card dashboard-skeleton">Cargando…</div><div className="metric-card dashboard-skeleton">Cargando…</div><div className="metric-card dashboard-skeleton">Cargando…</div><div className="metric-card dashboard-skeleton">Cargando…</div></section></section>;
-  const totalAttendance = summary.attendance.present + summary.attendance.late + summary.attendance.absent; const attendanceRate = totalAttendance ? Math.round((summary.attendance.present / totalAttendance) * 100) : 0;
-  return <section className="dashboard-view"><DashboardHeading /><section className="metric-grid"><div className="metric-card"><span>Estudiantes activos</span><strong>{summary.activeStudents}</strong><small>Personas con matrícula activa</small></div><div className="metric-card"><span>Grupos activos</span><strong>{summary.groups}</strong><small>Clases actualmente disponibles</small></div><div className="metric-card warning"><span>Cobros pendientes</span><strong>{summary.pendingCharges}</strong><small>Requieren seguimiento</small></div><div className="metric-card danger"><span>Cobros vencidos</span><strong>{summary.overdueCharges}</strong><small>Fuera de la fecha límite</small></div></section><section className="panel dashboard-attendance"><div><p className="eyebrow">Asistencia</p><h2>Resumen de clases</h2><p className="muted">Datos de las sesiones registradas.</p></div><div className="attendance-summary"><strong>{attendanceRate}%</strong><span>asistencia registrada</span><small>{summary.attendance.sessions} sesiones · {summary.attendance.present} presentes · {summary.attendance.late} tardías · {summary.attendance.absent} ausentes</small></div></section></section>;
-}
-
-function DashboardHeading() { return <div className="page-heading dashboard-heading"><div><p className="eyebrow">Vista general</p><h1>Resumen</h1><p className="muted">Indicadores actualizados desde SIGA.</p></div><span className="live-indicator"><i /> Datos en vivo</span></div>; }
 
 function PaymentsView() {
   const [charges, setCharges] = useState<Charge[]>([]); const [students, setStudents] = useState<Student[]>([]); const [showForm, setShowForm] = useState(false); const [paymentCharge, setPaymentCharge] = useState<Charge | null>(null); const [error, setError] = useState('');

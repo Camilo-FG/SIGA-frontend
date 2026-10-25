@@ -3,6 +3,7 @@ export type Role = 'DIRECTOR_GENERAL' | 'DIRECTOR_ADMINISTRATIVO' | 'ASISTENTE_D
 export type User = { id: string; email: string; name: string; role: Role };
 export type AuthResponse = { accessToken: string; user: User };
 export type Student = { id: string; firstName: string; lastName: string; birthDate?: string; email?: string; phone?: string; enrollmentStatus: 'ACTIVE' | 'INACTIVE' | 'PENDING' };
+export type Guardian = { id: string; firstName: string; lastName: string; email?: string; phone?: string; students: { student: Student; relationship: string }[] };
 export type Discipline = { id: string; name: string; active: boolean };
 export type Group = { id: string; name: string; location?: string; dayOfWeek?: number; startTime?: string; endTime?: string; discipline: Discipline; teachers: { user: User }[]; students: { student: Student }[] };
 export type AttendanceStatus = 'PRESENTE' | 'AUSENTE' | 'TARDIA';
@@ -35,6 +36,9 @@ export const getMe = () => request<User>('/auth/me');
 export const getStudents = (search = '') => request<Student[]>(`/students${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 export const createStudent = async (data: Omit<Student, 'id'>) => { const result = await request<Student>('/students', { method: 'POST', body: JSON.stringify(data) }); notify('Estudiante registrado correctamente.'); return result; };
 export const deactivateStudent = async (id: string) => { const result = await request<Student>(`/students/${id}`, { method: 'DELETE' }); notify('Estudiante desactivado correctamente.'); return result; };
+export const getGuardians = () => request<Guardian[]>('/students/guardians');
+export const createGuardian = async (data: { firstName: string; lastName: string; email?: string; phone?: string }) => { const result = await request<Guardian>('/students/guardians', { method: 'POST', body: JSON.stringify(data) }); notify('Encargado registrado correctamente.'); return result; };
+export const updateGuardian = async (id: string, data: { firstName: string; lastName: string; email?: string; phone?: string }) => { const result = await request<Guardian>(`/students/guardians/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); notify('Encargado actualizado correctamente.'); return result; };
 export const getDisciplines = () => request<Discipline[]>('/disciplines');
 export const createDiscipline = async (name: string) => { const result = await request<Discipline>('/disciplines', { method: 'POST', body: JSON.stringify({ name }) }); notify('Disciplina creada correctamente.'); return result; };
 export const getGroups = () => request<Group[]>('/groups');

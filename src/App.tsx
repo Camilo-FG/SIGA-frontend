@@ -16,14 +16,30 @@ import './guardians.css';
 import './assignments.css';
 import './payments-form.css';
 import './mobile.css';
+import './landing.css';
 import { ToastHost } from './ToastHost';
 
 const roleLabels: Record<User['role'], string> = { DIRECTOR_GENERAL: 'Director General', DIRECTOR_ADMINISTRATIVO: 'Director Administrativo', ASISTENTE_DIRECCION: 'Asistente de Dirección', COREOGRAFO: 'Coreógrafo', PROFESOR: 'Profesor' };
 
 function App() {
-  const [user, setUser] = useState<User | null>(null); const [checking, setChecking] = useState(Boolean(getToken()));
+  const [user, setUser] = useState<User | null>(null); const isPrivate = window.location.pathname.startsWith('/app'); const [checking, setChecking] = useState(isPrivate && Boolean(getToken()));
   useEffect(() => { if (!getToken()) return; getMe().then(setUser).catch(clearToken).finally(() => setChecking(false)); }, []);
-  return <><ToastHost />{checking ? <main className="center-page">Cargando sesión…</main> : !user ? <Login onLogin={(auth) => { setToken(auth.accessToken); setUser(auth.user); }} /> : <Dashboard user={user} onLogout={() => { clearToken(); setUser(null); }} />}</>;
+  if (!isPrivate && window.location.pathname !== '/login') return <><ToastHost /><Landing /></>;
+  return <><ToastHost />{checking ? <main className="center-page">Cargando sesión…</main> : !user ? <Login onLogin={(auth) => { setToken(auth.accessToken); window.location.href = '/app'; }} /> : <Dashboard user={user} onLogout={() => { clearToken(); window.location.href = '/login'; }} />}</>;
+}
+
+function Landing() {
+  const disciplines = ['Danza latina', 'Danza urbana', 'Folclore', 'Jazz', 'Contemporánea', 'Teatro, canto y música'];
+  const values = ['Identidad', 'Disciplina', 'Trabajo en equipo', 'Vocación de servicio', 'Creatividad'];
+  return <div className="landing"><header className="landing-nav"><a className="landing-brand" href="/"><span className="brand-mark">A</span><span>ADAGIO<small>Compañía de danza</small></span></a><nav><a href="#historia">Historia</a><a href="#disciplinas">Disciplinas</a><a href="#mision">Misión</a><a className="nav-login" href="/login">Acceso interno</a></nav></header><main>
+    <section className="landing-hero"><div className="hero-copy"><p className="eyebrow">Santa Cruz · Guanacaste</p><h1>El movimiento también transforma comunidades.</h1><p>Formación artística integral y espectáculos escénicos con vocación social.</p><a className="landing-cta" href="#historia">Conoce nuestra historia <span>→</span></a></div><div className="stage-art" aria-label="Silueta abstracta de una bailarina"><div className="stage-glow" /><div className="stage-figure">ADAGIO</div><span className="stage-line line-one" /><span className="stage-line line-two" /></div></section>
+    <section className="impact-strip"><div><strong>2016</strong><span>Fundación</span></div><div><strong>74</strong><span>Personas vinculadas</span></div><div><strong>4</strong><span>Países de proyección</span></div><div><strong>10</strong><span>Años de trayectoria</span></div></section>
+    <section className="landing-section story-section" id="historia"><div className="section-label">01 · Trayectoria</div><div><h2>De un proyecto social a una proyección internacional.</h2><p>ADAGIO nació en 2016 como un proyecto social y humano. Con el tiempo amplió su propuesta hacia el teatro, el canto, la música y el modelaje, construyendo una comunidad artística para niñas, niños, adolescentes y jóvenes.</p><div className="timeline"><div><b>2016</b><span>Fundación</span></div><div><b>2018+</b><span>Diversificación artística</span></div><div><b>2024</b><span>Ganadores del Fondo FIA</span></div><div><b>2026</b><span>México · Brasil · Panamá · RD</span></div></div></div></section>
+    <section className="landing-section disciplines-section" id="disciplinas"><div className="section-label">02 · Formación</div><div><h2>Un escenario para encontrar tu voz.</h2><p>Una formación artística diversa, disciplinada y conectada con la cultura.</p><div className="discipline-grid">{disciplines.map((discipline, index) => <div className="discipline-tile" key={discipline}><span>0{index + 1}</span><strong>{discipline}</strong></div>)}</div></div></section>
+    <section className="mission-section" id="mision"><div className="mission-card"><p className="eyebrow">Nuestra misión</p><h2>Promover cultura, salud, valores de niñez y seguridad social mediante la danza.</h2></div><div className="vision-card"><p className="eyebrow">Nuestra visión</p><h2>Ser agrupación líder en cultura y educación juvenil para combatir problemas sociales.</h2></div></section>
+    <section className="values-section"><div><p className="eyebrow">Lo que nos mueve</p><h2>Identidad que se construye en comunidad.</h2></div><div className="values-list">{values.map((value) => <span key={value}>{value}</span>)}</div></section>
+    <section className="landing-cta-section"><p className="eyebrow">ADAGIO · Santa Cruz, Guanacaste</p><h2>La escena empieza cuando una comunidad se atreve a moverse.</h2><a className="landing-cta light" href="mailto:info@adagio.cr">Conversemos <span>→</span></a></section>
+  </main><footer className="landing-footer"><span>© ADAGIO · Compañía de Danza y Proyección Escénica</span><a href="/login">Acceso interno SIGA</a></footer></div>;
 }
 
 function Login({ onLogin }: { onLogin: (auth: Awaited<ReturnType<typeof login>>) => void }) {

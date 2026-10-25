@@ -1,0 +1,5 @@
+/* WCAG-friendly public palette overrides: coral and teal are used as text too. */
+.landing{--coral:#b83f45;--teal:#0f7f66}
+.landing-cta{background:#b83f45}
+.discipline-tile span,.section-label,.landing .eyebrow{color:#a8323b}
+.values-list span{color:#0b6b57;border-color:#78b9a8}

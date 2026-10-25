@@ -17,6 +17,7 @@ import './assignments.css';
 import './payments-form.css';
 import './mobile.css';
 import './landing.css';
+import './contrast.css';
 import { ToastHost } from './ToastHost';
 
 const roleLabels: Record<User['role'], string> = { DIRECTOR_GENERAL: 'Director General', DIRECTOR_ADMINISTRATIVO: 'Director Administrativo', ASISTENTE_DIRECCION: 'Asistente de Dirección', COREOGRAFO: 'Coreógrafo', PROFESOR: 'Profesor' };

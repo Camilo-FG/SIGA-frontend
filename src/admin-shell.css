@@ -1,0 +1,204 @@
+.app-shell {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 100% 0, #efe6fb 0, transparent 28%),
+    var(--cream);
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  height: 100vh;
+  padding: 28px 16px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.admin-brand .eyebrow { margin: 0; }
+
+.admin-brand strong {
+  display: block;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.admin-workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-workspace .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--cream) 88%, white);
+  backdrop-filter: blur(12px);
+}
+
+.admin-workspace .content { padding: 28px clamp(20px, 3vw, 48px) 64px; }
+
+.user-menu span {
+  display: block;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+body:has(.app-shell) .global-theme-control { display: none; }
+
+.admin-workspace .theme-toggle {
+  background: #fff;
+  border-color: var(--line);
+}
+
+.section-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  border: 0;
+}
+
+.section-nav button {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+}
+
+.section-nav .nav-active {
+  background: #f2eafb;
+  color: #5b21b6;
+  box-shadow: inset 3px 0 #7c3aed;
+}
+
+.page-heading h1 { font-size: clamp(30px, 3vw, 40px); }
+
+.panel,
+.metric-card,
+.group-card,
+.guardian-card,
+.summary-card {
+  border-radius: 14px;
+}
+
+.metric-card { position: relative; overflow: hidden; }
+
+.metric-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: #7c3aed;
+}
+
+.metric-card.warning::before { background: #d9a441; }
+.metric-card.danger::before { background: #c45b73; }
+
+.panel h2 { margin-bottom: 14px; font-size: 22px; }
+
+th { border-top: 0; background: #faf7fd; }
+
+tbody tr:hover td { background: #fbf8fe; }
+
+.panel td .secondary-button,
+.panel td .ghost-button,
+.panel td .danger-button,
+.panel td .approve-button {
+  margin: 2px 4px 2px 0;
+}
+
+[data-theme='dark'] .app-shell { background: #0b0b0d; }
+
+[data-theme='dark'] .admin-sidebar {
+  background: #151518;
+  border-right-color: #303036;
+}
+
+[data-theme='dark'] .admin-brand .brand-mark {
+  background: #d4af37;
+  color: #0b0b0d;
+}
+
+[data-theme='dark'] .admin-workspace .topbar { background: #0b0b0de6; }
+
+[data-theme='dark'] .user-menu span,
+[data-theme='dark'] .admin-workspace .theme-toggle {
+  background: #242428;
+  color: #f2d675;
+  border-color: #44444c;
+}
+
+[data-theme='dark'] .section-nav .nav-active {
+  background: #292414;
+  color: #f2d675;
+  box-shadow: inset 3px 0 #d4af37;
+}
+
+[data-theme='dark'] th { background: #1c1c20; }
+
+[data-theme='dark'] tbody tr:hover td { background: #1c1c20; }
+
+[data-theme='dark'] .metric-card::before { background: #d4af37; }
+
+@media (max-width: 900px) {
+  .app-shell { grid-template-columns: 1fr; }
+
+  .admin-sidebar {
+    position: sticky;
+    z-index: 3;
+    flex-direction: row;
+    align-items: center;
+    height: auto;
+    gap: 12px;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  .admin-brand { flex: 0 0 auto; }
+
+  .section-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .section-nav::-webkit-scrollbar { display: none; }
+
+  .section-nav button {
+    width: auto;
+    white-space: nowrap;
+    min-height: 44px;
+  }
+
+  .section-nav .nav-active { box-shadow: inset 0 -3px #7c3aed; }
+
+  .admin-workspace .topbar { align-items: center; flex-wrap: wrap; gap: 12px; }
+
+  .admin-workspace .user-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+  }
+}

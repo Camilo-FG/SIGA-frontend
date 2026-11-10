@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { assignStudentToGroup, assignTeacherToGroup, createDiscipline, createGroup, deactivateDiscipline, deactivateGroup, getDisciplines, getGroups, getInternalUsers, getStudents, updateGroup, withdrawStudentFromGroup } from '../../api';
+import { assignStudentToGroup, assignTeacherToGroup, createDiscipline, createGroup, deactivateDiscipline, deactivateGroup, getDisciplines, getGroups, getInternalUsers, getStudents, removeTeacherFromGroup, updateGroup, withdrawStudentFromGroup } from '../../api';
 import type { Discipline, Group, Student, User } from '../../api';
+import { Pager, usePage } from '../../pager';
 
 export function GroupsView() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -35,6 +36,8 @@ export function GroupsView() {
     try { await deactivateGroup(id); await load(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo desactivar el grupo'); }
   }
 
+  const groupPage = usePage(groups);
+
   return (
     <>
       <div className="page-heading">
@@ -58,24 +61,25 @@ export function GroupsView() {
         ))}
       </div>
       <section className="group-grid">
-        {groups.length === 0 ? <p className="empty-state">No hay grupos registrados.</p> : groups.map((group) => (
+        {groups.length === 0 ? <p className="empty-state">No hay grupos registrados.</p> : groupPage.slice.map((group) => (
           <article className="group-card" key={group.id}>
             <div className="group-card-top"><span className="discipline-tag">{group.discipline.name}</span><span className="status status-active">ACTIVO</span></div>
             <h2>{group.name}</h2>
             <p className="muted">{group.dayOfWeek != null ? `Día ${group.dayOfWeek} · ` : ''}{group.startTime || 'Horario pendiente'}{group.endTime ? ` – ${group.endTime}` : ''}</p>
             <p className="group-meta">{group.location || 'Espacio pendiente'} · {group.students.length} estudiantes</p>
             <div className="group-assignments">
-              <span>{group.teachers.length} docentes asignados</span>
+              <span>{group.teachers.length === 0 ? 'Sin docente asignado' : group.teachers.map(({ user }) => user.name).join(', ')}</span>
               <button className="secondary-button" onClick={() => setAssigning(group)}>Gestionar asignaciones</button>
               <button className="ghost-button" onClick={() => { setEditing(group); setShowForm(true); }}>Editar</button>
               <button className="danger-button" onClick={() => void deactivateOneGroup(group.id)}>Desactivar</button>
             </div>
           </article>
         ))}
+        <Pager page={groupPage.page} pages={groupPage.pages} total={groupPage.total} from={groupPage.from} to={groupPage.to} onPage={groupPage.setPage} />
       </section>
       {showForm && <GroupForm group={editing} disciplines={disciplines} onClose={() => setShowForm(false)} onCreated={async (group) => { setGroups((current) => editing ? current.map((item) => item.id === group.id ? group : item) : [...current, group]); setShowForm(false); }} />}
       {showDisciplineForm && <DisciplineForm onClose={() => setShowDisciplineForm(false)} onCreated={(discipline) => { setDisciplines((current) => [...current, discipline]); setShowDisciplineForm(false); }} />}
-      {assigning && <AssignmentForm group={assigning} students={students} teachers={teachers} onClose={() => setAssigning(null)} onAssigned={async () => { setAssigning(null); setGroups(await getGroups()); }} />}
+      {assigning && <AssignmentForm group={assigning} students={students} teachers={teachers} onClose={() => setAssigning(null)} onAssigned={async () => { const next = await getGroups(); setGroups(next); setAssigning((current) => current ? next.find((item) => item.id === current.id) ?? null : null); }} />}
     </>
   );
 }
@@ -102,7 +106,13 @@ function AssignmentForm({ group, students, teachers, onClose, onAssigned }: { gr
   async function assignTeacher() {
     if (!teacherId) return;
     setSaving(true);
-    try { await assignTeacherToGroup(group.id, teacherId); await onAssigned(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo asignar el docente'); } finally { setSaving(false); }
+    try { await assignTeacherToGroup(group.id, teacherId); setTeacherId(''); await onAssigned(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo asignar el docente'); } finally { setSaving(false); }
+  }
+
+  async function removeTeacher(id: string) {
+    if (!window.confirm('¿Quitar a este docente del grupo?')) return;
+    setSaving(true);
+    try { await removeTeacherFromGroup(group.id, id); await onAssigned(); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo quitar al docente'); } finally { setSaving(false); }
   }
 
   return (
@@ -130,10 +140,19 @@ function AssignmentForm({ group, students, teachers, onClose, onAssigned }: { gr
           <button className="primary-button" disabled={saving || !studentId} onClick={() => void assignStudent()}>Asignar estudiante</button>
         </div>
         <div className="assignment-block">
-          <strong>Agregar profesor o coreógrafo</strong>
+          <strong>Docentes del grupo</strong>
+          {group.teachers.length === 0 ? <p className="muted">Nadie está asignado ahora.</p> : group.teachers.map(({ user }) => (
+            <div className="member-row" key={user.id}>
+              <span>{user.name}</span>
+              <button className="ghost-button" disabled={saving} onClick={() => void removeTeacher(user.id)}>Quitar</button>
+            </div>
+          ))}
+        </div>
+        <div className="assignment-block">
+          <strong>Agregar docente</strong>
           <select value={teacherId} onChange={(event) => setTeacherId(event.target.value)}>
             <option value="">Selecciona un docente…</option>
-            {teachers.filter((teacher) => !group.teachers.some((item) => item.user.id === teacher.id)).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name} · {teacher.role}</option>)}
+            {teachers.filter((teacher) => !group.teachers.some((item) => item.user.id === teacher.id)).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}
           </select>
           <button className="primary-button" disabled={saving || !teacherId} onClick={() => void assignTeacher()}>Asignar docente</button>
         </div>

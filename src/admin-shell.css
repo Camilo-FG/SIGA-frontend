@@ -202,3 +202,60 @@ tbody tr:hover td { background: #fbf8fe; }
     align-items: center;
   }
 }
+
+.record-backdrop {
+  z-index: 90;
+  background: #24152f2e;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.record-modal {
+  position: relative;
+  width: min(100%, 980px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 28px 28px 32px;
+}
+
+.record-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  margin: -4px -4px 0 12px;
+  border-radius: 8px;
+}
+
+.record-modal .page-heading h1 { font-size: clamp(28px, 3vw, 40px); }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  color: #4b4458;
+  font-size: 13px;
+}
+
+.pager button:disabled { opacity: 0.4; }
+
+[data-theme='dark'] .pager { color: #D4D4D8; }
+
+[data-theme='dark'] .record-backdrop { background: #00000066; }
+[data-theme='dark'] .record-close { color: #F5F5F5; }
+
+/* Later stylesheets set :root tokens at the same specificity as dark mode, so light colors leak onto dark surfaces. */
+:root[data-theme='dark'] {
+  --ink: #F5F5F5;
+  --muted: #A1A1AA;
+  --line: #303036;
+  --cream: #0B0B0D;
+  --accent: #D4AF37;
+  --green: #6fc4a4;
+  --shadow: 0 16px 34px #00000055;
+  color-scheme: dark;
+}

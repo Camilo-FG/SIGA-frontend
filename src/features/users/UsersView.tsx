@@ -1,26 +1,29 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { createStaffUser, getInternalUsers } from '../../api';
+import { createStaffUser, getInternalUsers, resetStaffPassword, setUserActive, updateStaffUser } from '../../api';
 import type { Role, User } from '../../api';
+import { Pager, usePage } from '../../pager';
 
 const roleLabels: Record<Role, string> = {
   DIRECTOR_GENERAL: 'Director General',
   DIRECTOR_ADMINISTRATIVO: 'Director Administrativo',
   ASISTENTE_DIRECCION: 'Asistente de Dirección',
   COREOGRAFO: 'Coreógrafo',
-  PROFESOR: 'Profesor',
+  PROFESOR: 'Coreógrafo',
 };
 
-const assignableRoles: Role[] = ['PROFESOR', 'COREOGRAFO', 'ASISTENTE_DIRECCION', 'DIRECTOR_ADMINISTRATIVO', 'DIRECTOR_GENERAL'];
+const assignableRoles: Role[] = ['COREOGRAFO', 'ASISTENTE_DIRECCION', 'DIRECTOR_ADMINISTRATIVO', 'DIRECTOR_GENERAL'];
 
 export function UsersView() {
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<User | null>(null);
 
   useEffect(() => {
     getInternalUsers().then(setUsers).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudieron cargar los usuarios'));
   }, []);
+  const userPage = usePage(users);
 
   return (
     <>
@@ -36,20 +39,72 @@ export function UsersView() {
       <section className="panel">
         {users.length === 0 ? <p className="empty-state">No hay usuarios registrados.</p> : (
           <div className="user-list">
-            {users.map((user) => (
+            {userPage.slice.map((user) => (
               <article className="member-row" key={user.id}>
                 <div>
                   <strong>{user.name}</strong>
                   <p className="muted">{user.email}</p>
                 </div>
-                <span className="status status-active">{roleLabels[user.role]}</span>
+                <span className="status status-active">{roleLabels[user.role]}{user.active === false ? ' · inactivo' : ''}</span>
+                <div className="review-actions">
+                  <button className="secondary-button" onClick={() => setEditing(user)}>Editar</button>
+                  <button className="ghost-button" onClick={() => void setUserActive(user.id, user.active === false).then(() => getInternalUsers().then(setUsers)).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudo cambiar el estado'))}>{user.active === false ? 'Activar' : 'Desactivar'}</button>
+                  <button className="ghost-button" onClick={() => void resetStaffPassword(user.id).then((result) => window.alert(`Contraseña temporal: ${result.temporaryPassword}`)).catch((err: unknown) => setError(err instanceof Error ? err.message : 'No se pudo restablecer'))}>Restablecer</button>
+                </div>
               </article>
             ))}
           </div>
         )}
+        <Pager page={userPage.page} pages={userPage.pages} total={userPage.total} from={userPage.from} to={userPage.to} onPage={userPage.setPage} />
       </section>
       {showForm && <UserForm onClose={() => setShowForm(false)} onCreated={(user) => { setUsers((current) => [...current, user].sort((a, b) => a.name.localeCompare(b.name, 'es'))); setShowForm(false); }} />}
+      {editing && <EditUserForm user={editing} onClose={() => setEditing(null)} onSaved={(user) => { setUsers((current) => current.map((item) => item.id === user.id ? user : item).sort((a, b) => a.name.localeCompare(b.name, 'es'))); setEditing(null); }} />}
     </>
+  );
+}
+
+function EditUserForm({ user, onClose, onSaved }: { user: User; onClose: () => void; onSaved: (user: User) => void }) {
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email);
+  const [role, setRole] = useState<Role>(user.role === 'PROFESOR' ? 'COREOGRAFO' : user.role);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      onSaved(await updateStaffUser(user.id, { name: name.trim(), email: email.trim(), role }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el usuario');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop record-backdrop" onMouseDown={onClose}>
+      <section className="modal" role="dialog" aria-modal="true" aria-labelledby="edit-user-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="modal-heading">
+          <div>
+            <p className="eyebrow">Cuenta interna</p>
+            <h2 id="edit-user-title">Editar usuario</h2>
+          </div>
+          <button className="close-button" onClick={onClose} aria-label="Cerrar">×</button>
+        </div>
+        <form onSubmit={submit} className="stack-form">
+          <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} required minLength={2} maxLength={100} /></label>
+          <label>Correo<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={160} /></label>
+          <label>Rol<select value={role} onChange={(event) => setRole(event.target.value as Role)}>{assignableRoles.map((item) => <option key={item} value={item}>{roleLabels[item]}</option>)}</select></label>
+          {error && <p className="error-message">{error}</p>}
+          <div className="modal-actions">
+            <button type="button" className="secondary-button" onClick={onClose}>Cancelar</button>
+            <button className="primary-button" disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</button>
+          </div>
+        </form>
+      </section>
+    </div>
   );
 }
 
@@ -57,7 +112,7 @@ function UserForm({ onClose, onCreated }: { onClose: () => void; onCreated: (use
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role>('PROFESOR');
+  const [role, setRole] = useState<Role>('COREOGRAFO');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 

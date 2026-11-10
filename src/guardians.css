@@ -1,1 +1,104 @@
-.guardian-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}.guardian-card{padding:20px;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow)}.guardian-card-heading{display:flex;align-items:center;gap:12px}.guardian-card-heading h2{margin:0;font-size:20px}.guardian-card-heading p,.guardian-phone{margin:4px 0 0;color:var(--muted);font-size:13px}.guardian-card-heading .ghost-button{margin-left:auto}.avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#eee5fb;color:#5b21b6;font-weight:800}.guardian-phone{margin:18px 0;border-top:1px solid var(--line);padding-top:14px}.linked-students{display:grid;gap:7px;color:var(--muted);font-size:12px}.linked-students strong{color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.linked-students span{padding:7px 9px;border-radius:5px;background:#f7f2fd;color:#5b21b6;font-weight:600}
+.guardian-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+.guardian-card {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: var(--shadow);
+}
+
+.guardian-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.guardian-identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.guardian-card-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.guardian-card-heading p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.guardian-card-heading .ghost-button {
+  flex-shrink: 0;
+  margin-top: 2px;
+  padding: 10px 16px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #eee5fb;
+  color: #5b21b6;
+  font-weight: 800;
+}
+
+.guardian-phone,
+.linked-students {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.guardian-phone span,
+.linked-students strong {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.linked-students {
+  font-size: 13px;
+}
+
+.linked-students span {
+  padding: 10px 12px;
+  border-radius: 5px;
+  background: #f7f2fd;
+  color: #5b21b6;
+  font-weight: 600;
+}
+
+.linked-students .secondary-button {
+  margin-top: 8px;
+  min-height: 46px;
+}
+
+.guardian-link {
+  display: grid;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}

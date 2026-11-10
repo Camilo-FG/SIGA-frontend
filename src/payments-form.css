@@ -1,1 +1,10 @@
 .form-help{margin:0;padding:10px 12px;border-radius:5px;background:#f7f2fd;color:#5b21b6;font-size:12px;line-height:1.5}
+.student-picker{position:relative;display:block}
+.student-suggestions{position:absolute;z-index:5;top:calc(100% + 6px);left:0;right:0;max-height:220px;overflow:auto;margin:0;padding:6px;list-style:none;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+.student-suggestions button{width:100%;padding:10px 12px;border:0;border-radius:6px;background:transparent;color:#24152f;text-align:left;font-weight:600}
+.student-suggestions li[aria-selected='true'] button,.student-suggestions button:hover{background:#f2eafb;color:#5b21b6}
+.student-suggestions .empty-suggestion{padding:10px 12px;color:#6f6478}
+[data-theme='dark'] .student-suggestions{background:#242428;border-color:#3d3d43}
+[data-theme='dark'] .student-suggestions button{color:#F5F5F5}
+[data-theme='dark'] .student-suggestions li[aria-selected='true'] button,[data-theme='dark'] .student-suggestions button:hover{background:#3a3424;color:#F2D675}
+[data-theme='dark'] .student-suggestions .empty-suggestion{color:#A1A1AA}

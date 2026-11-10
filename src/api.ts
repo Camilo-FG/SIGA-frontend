@@ -11,7 +11,7 @@ export type AttendanceSession = { id: string; groupId: string; date: string; gro
 export type AttendanceResponse = { sessions: AttendanceSession[]; summary: { total: number; present: number; late: number; absent: number; attendanceRate: number } };
 export type Charge = { id: string; studentId: string; concept: string; amount: string | number; period: string; dueDate?: string; status: 'PENDIENTE' | 'PAGADO' | 'VENCIDO' | 'CANCELADO'; student: Student; payments: Payment[] };
 export type Payment = { id: string; amount: string | number; receiptUrl?: string; receiptStatus: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO'; reference?: string };
-export type DashboardSummary = { activeStudents: number; groups: number; pendingCharges?: number; overdueCharges?: number; attendance: { sessions: number; present: number; late: number; absent: number } };
+export type DashboardSummary = { activeStudents: number; groups: number; pendingCharges?: number; overdueCharges?: number; adoption?: { weeklyAttendanceCoverage: number; paymentsRegisteredThisMonth: number }; attendance: { sessions: number; present: number; late: number; absent: number } };
 const tokenKey = 'siga.accessToken';
 import { notify } from './toast';
 export const getToken = () => sessionStorage.getItem(tokenKey);

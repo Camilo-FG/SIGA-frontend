@@ -5,4 +5,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   resolve: { dedupe: ['react', 'react-dom'] },
+  preview: {
+    host: true,
+    port: Number(process.env.PORT) || 4173,
+  },
 })
